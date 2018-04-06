@@ -6,9 +6,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,6 +22,9 @@ public class MainActivity extends AppCompatActivity {
 
     //Banco de dados
     private SQLiteDatabase dados;
+
+    private ArrayAdapter<String> itensadaptador;
+    private ArrayList<String> itens;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,20 +49,62 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v) {
 
                     String nometarefa = txtInput.getText().toString();
-                    dados.execSQL("INSERT INTO tarefas(task) VALUES ('" + nometarefa +"')");
+
+                    salvarTarefa(nometarefa);
 
                 }
             });
+
+            recuperarTarefas();
+
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private void salvarTarefa(String texto){
+
+        try{
+            if(texto.equals("")){
+                Toast.makeText(MainActivity.this,"Digite uma tarefa",Toast.LENGTH_SHORT).show();
+            }else{
+                dados.execSQL("INSERT INTO tarefas(task) VALUES ('" + texto +"')");
+                Toast.makeText(MainActivity.this,"Tarefa salva",Toast.LENGTH_SHORT).show();
+                recuperarTarefas();
+                txtInput.setText("");
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private void recuperarTarefas(){
+
+        try{
             // Recuperar as tarefas cadastradas
-            Cursor cursor = dados.rawQuery("SELECT * FROM tarefas",null);
+            Cursor cursor = dados.rawQuery("SELECT * FROM tarefas ORDER BY id DESC",null);
+
             int indice = cursor.getColumnIndex("id");
             int indiceTarefa = cursor.getColumnIndex("task");
+
+            itens = new ArrayList<String>();
+            itensadaptador = new ArrayAdapter<String>(getApplicationContext(),
+                    android.R.layout.simple_list_item_2,
+                    android.R.id.text1,
+                    itens);
+            listaTarefas.setAdapter(itensadaptador);
 
             cursor.moveToFirst();
 
             while (cursor != null){
 
+                int total = cursor.getCount();
                 Log.i("Resultado - ", "Tarefa: " + cursor.getString(indiceTarefa));
+                itens.add(cursor.getString(indiceTarefa));
 
                 cursor.moveToNext();
             }
@@ -64,9 +113,6 @@ public class MainActivity extends AppCompatActivity {
         }catch (Exception e){
             e.printStackTrace();
         }
-
-
-
 
     }
 }
